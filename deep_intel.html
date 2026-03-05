@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DECODE DEEP INTEL</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --y: #e8c93a; --bg: #050505; --card: #111; --r: #ff4d4d; --blue: #3498db; --g: #00e676; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: #eee; font-family: 'Space Mono', monospace; margin: 0; padding: 15px; }
+        .header { text-align: center; padding: 10px 0 20px; border-bottom: 1px solid #222; position: relative; }
+        .btn-back { position: absolute; left: 0; top: 15px; background: transparent; border: 1px solid var(--y); color: var(--y); padding: 5px 10px; font-family: 'Bebas Neue'; border-radius: 5px; cursor: pointer; }
+        h1 { font-family: 'Bebas Neue'; color: var(--y); font-size: 2.8rem; margin: 0; letter-spacing: 2px; }
+        .sticky-search { position: sticky; top: 0; background: var(--bg); padding: 15px 0; z-index: 1000; }
+        input { width: 100%; background: #1a1a1a; border: 2px solid #333; padding: 20px; color: var(--y); font-size: 1.4rem; border-radius: 12px; text-align: center; outline: none; }
+        .btn-scan { width: 100%; background: var(--y); color: #000; border: none; padding: 20px; font-family: 'Bebas Neue'; font-size: 1.8rem; border-radius: 12px; margin-top: 10px; cursor: pointer; font-weight: bold; }
+        .intel-container { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .p-card { background: var(--card); border-radius: 12px; padding: 18px; border: 1px solid #222; }
+        .p-label { color: var(--y); font-size: 0.7rem; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; display: block; border-left: 3px solid var(--y); padding-left: 8px; }
+        .p-main { font-family: 'Bebas Neue'; font-size: 2.2rem; display: flex; align-items: baseline; gap: 10px; }
+        .p-sub { font-size: 0.8rem; color: #888; margin-top: 8px; line-height: 1.4; border-top: 1px solid #222; padding-top: 8px; }
+        .trend-up { color: var(--g); } .trend-down { color: var(--r); }
+        .chart-box { height: 140px; margin-top: 10px; }
+        .match-entry { background: #1a1a1a; margin-bottom: 8px; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid #333; }
+        .m-tag { font-family: 'Bebas Neue'; color: var(--y); font-size: 1.2rem; }
+        .m-data { font-size: 0.75rem; text-align: right; line-height: 1.4; }
+        .m-data b { color: var(--g); }
+        #loading { display: none; text-align: center; padding: 30px; color: var(--y); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button class="btn-back" onclick="location.href='index.html'">← BACK</button>
+    <h1>DEEP INTEL</h1>
+    <div style="font-size: 0.7rem; color: #555;">DECODE 2026 STRATEGY ENGINE</div>
+</div>
+
+<div class="sticky-search">
+    <input type="number" id="t-id" placeholder="TEAM ID" inputmode="numeric">
+    <button class="btn-scan" onclick="fetchIntel()">RUN DEEP SCAN</button>
+</div>
+
+<div id="loading">INITIALIZING NEURAL LINK...</div>
+
+<div id="display-area" style="display:none" class="intel-container">
+    <div class="p-card"><span class="p-label">1. Reliability Score (TeleOp)</span><div class="p-main" id="v-rel">--%</div><div class="p-sub" id="d-rel">--</div></div>
+    
+    <div class="p-card"><span class="p-label">2. Auto Bug-Fix Predictor</span><div class="p-main" id="v-auto-slope">--</div><div class="p-sub" id="d-auto-slope">--</div></div>
+
+    <div class="p-card"><span class="p-label">3. Scorul Plafon (Ap / Dep)</span><div class="p-main" id="v-ceiling">--</div><div class="p-sub">Maxim istoric pe poziții.</div></div>
+
+    <div class="p-card"><span class="p-label">4. TeleOp Performance Trend</span><div class="chart-box"><canvas id="teleChart"></canvas></div></div>
+
+    <div class="p-card" style="border-left-color: var(--g)"><span class="p-label" style="color:var(--g); border-left-color: var(--g)">5. Auto Performance Trend</span><div class="chart-box"><canvas id="autoChart"></canvas></div></div>
+
+    <div class="p-card"><span class="p-label">6. Solo Carrier Factor</span><div class="p-main" id="v-carrier">--%</div><div class="p-sub" id="d-carrier">--</div></div>
+
+    <div class="p-card"><span class="p-label">7. Alliance Bias (Red vs Blue)</span><div class="p-main" id="v-bias">--</div><div class="p-sub" id="d-bias">--</div></div>
+
+    <div class="p-card"><span class="p-label">8. Resistance (Warmup/Burnout)</span><div class="p-main" id="v-burn">--</div><div class="p-sub" id="d-burn">--</div></div>
+
+    <div class="p-card"><span class="p-label">9. RP Contribution Rate</span><div class="p-main" id="v-rp">--%</div><div class="p-sub">Frecvența succesului în RP objectives.</div></div>
+
+    <div id="match-timeline">
+        <div style="font-family:'Bebas Neue'; color:var(--y); font-size:1.5rem; margin: 15px 0 10px;">◈ Match-by-Match Log</div>
+        <div id="timeline-list"></div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwVMpi2xBkL8kBUtL0-NSXlAdMalPAO99zgsgnWy-9v9pbeafhcuWUA8jUVbVEBTVwY/exec";
+    let teleChart = null, autoChart = null;
+
+    async function fetchIntel() {
+        const team = document.getElementById('t-id').value;
+        if(!team) return;
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('display-area').style.display = 'none';
+        try {
+            const res = await fetch(`${SCRIPT}?team=${team}&intel=true&_=${Date.now()}`);
+            const d = await res.json();
+            updateUI(d);
+        } catch(e) { alert("Eroare de conexiune. Verifica URL-ul si permisiunile."); }
+        document.getElementById('loading').style.display = 'none';
+    }
+
+    function updateUI(d) {
+        document.getElementById('display-area').style.display = 'flex';
+        document.getElementById('v-rel').textContent = d.reliability + "%";
+        document.getElementById('d-rel').textContent = d.reliability > 80 ? "Robot stabil. Strategie sigură." : "Instabilitate mare. Risc ridicat.";
+        
+        // UI Fix pentru Parametrul 2
+        const as = parseFloat(d.autoSlope);
+        const autoEl = document.getElementById('v-auto-slope');
+        autoEl.textContent = as > 0 ? "📈 FIXING" : (as < 0 ? "📉 DROPPING" : "📉 STAGNANT");
+        autoEl.className = 'p-main ' + (as > 0 ? 'trend-up' : 'trend-down');
+        document.getElementById('d-auto-slope').textContent = as > 0 ? `Echipa a crescut media cu ${as.toFixed(1)} piese.` : "Nu s-a detectat progres în Auto.";
+
+        document.getElementById('v-ceiling').textContent = `${d.ceilingAp} | ${d.ceilingDep}`;
+        document.getElementById('v-carrier').textContent = d.soloCarrierScore + "%";
+        document.getElementById('d-carrier').textContent = d.soloCarrierScore > 75 ? "Poate câștiga singur meciul." : "Depinde de aliați.";
+
+        const b = parseFloat(d.allianceBias);
+        document.getElementById('v-bias').textContent = (b === 0 ? "NEUTRAL" : (b > 0 ? "RED" : "BLUE")) + (b !== 0 ? ` (+${Math.abs(b)})` : "");
+        document.getElementById('d-bias').textContent = b === 0 ? "Joc echilibrat pe ambele parti." : `Preferă partea ${b > 0 ? 'Roșie' : 'Albastră'}.`;
+
+        const bs = parseFloat(d.warmupBurnout);
+        document.getElementById('v-burn').textContent = bs > 0 ? "WARM-UP" : (bs < 0 ? "BURNOUT" : "STABLE");
+        document.getElementById('d-burn').textContent = bs > 0 ? "Devine mai bun pe final." : (bs < 0 ? "Atenție la oboseală." : "Constant pe tot parcursul.");
+
+        document.getElementById('v-rp').textContent = d.rpRate + "%";
+        renderCharts(d.historyScores, d.historyAuto);
+        
+        let timelineHtml = "";
+        d.matchLogs.slice().reverse().forEach(m => {
+            const isRed = m.matchInfo.toUpperCase().startsWith("R");
+            timelineHtml += `<div class="match-entry" style="border-right: 4px solid ${isRed ? 'var(--r)' : 'var(--blue)'}">
+                <div><span class="m-tag">${m.matchInfo}</span></div>
+                <div class="m-data">AUTO: <b>${m.autoPerf}</b> | TELE: <b>${m.teleScore}</b><br>RP: <b>${m.rp}</b></div>
+            </div>`;
+        });
+        document.getElementById('timeline-list').innerHTML = timelineHtml;
+    }
+
+    function renderCharts(scores, auto) {
+        const cfg = (ctx, data, color) => ({
+            type: 'line',
+            data: { labels: data.map((_, i) => i + 1), datasets: [{ data: data, borderColor: color, tension: 0.3, fill: true, backgroundColor: color+'22', pointRadius: 4 }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } }, maintainAspectRatio: false }
+        });
+        if(teleChart) teleChart.destroy();
+        if(autoChart) autoChart.destroy();
+        teleChart = new Chart(document.getElementById('teleChart'), cfg(null, scores, '#e8c93a'));
+        autoChart = new Chart(document.getElementById('autoChart'), cfg(null, auto, '#00e676'));
+    }
+</script>
+</body>
+</html>
