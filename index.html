@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DECODE HUB V32.1</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --yellow: #e8c93a; --black: #0a0a0a; --white: #f5f5f0; --red: #ff4d4d; --green: #00e676; --blue: #3498db; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Mono', monospace; }
+        body { background: var(--black); color: var(--white); }
+        .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 2px solid var(--yellow); background: #000; position: sticky; top: 0; z-index: 100; }
+        h1 { font-family: 'Bebas Neue'; font-size: 2.2rem; color: var(--yellow); }
+        .container { width: 100%; max-width: 450px; margin: auto; padding: 10px; }
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .card { background: #1a1a1a; border: 1px solid #333; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--yellow); border-radius: 8px; }
+        label { font-size: 0.7rem; color: var(--yellow); text-transform: uppercase; font-weight: bold; display: block; margin-bottom: 5px; }
+        input, select { width: 100%; background: #000; border: 1px solid #444; padding: 12px; color: #fff; margin-bottom: 5px; font-size: 1rem; border-radius: 5px; outline: none; }
+        .btn-act { width: 100%; background: var(--yellow); color: #000; border: none; padding: 15px; font-family: 'Bebas Neue'; font-size: 1.5rem; cursor: pointer; border-radius: 8px; }
+        .val { font-family: 'Bebas Neue'; font-size: 2.8rem; min-width: 60px; text-align: center; }
+        .counter-row { display: flex; align-items: center; gap: 10px; }
+        .btn-undo { flex: 1; background: #262626; color: #888; border: 1px solid #333; padding: 12px; font-size: 0.8rem; border-radius: 5px; }
+        #loader { display: none; position: fixed; top: 75px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: #000; padding: 5px 15px; z-index: 200; font-weight: bold; border-radius: 10px; }
+        .stat-val { font-family: 'Bebas Neue'; font-size: 1.8rem; color: var(--yellow); }
+    </style>
+</head>
+<body>
+
+<div id="loader">UPLINKING...</div>
+
+<div class="container">
+    <div class="nav-bar">
+        <h1>DECODE</h1>
+        <div style="display:flex; gap:5px;">
+            <button onclick="location.href='deep_intel.html'" style="background:var(--yellow); border:none; color:black; padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px; font-weight:bold;">DEEP INTEL</button>
+            <button id="mode-btn" onclick="toggleSearch()" style="background:transparent; border:1px solid var(--yellow); color:var(--yellow); padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px;">SEARCH</button>
+        </div>
+    </div>
+
+    <div id="screen-scout" class="screen active">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px;">
+            <div><label>Team ID</label><input type="number" id="t-id" placeholder="20000" inputmode="numeric"></div>
+            <div><label>Match #</label><input type="number" id="m-num" placeholder="1" inputmode="numeric"></div>
+        </div>
+        <label>Alliance Position</label>
+        <select id="p-id">
+            <option value="R ap">RED - Aproape</option>
+            <option value="R dep">RED - Departe</option>
+            <option value="A ap">BLUE - Aproape</option>
+            <option value="A dep">BLUE - Departe</option>
+        </select>
+        <div class="card"><label>Auto Scored</label><div class="counter-row"><button class="btn-act" onclick="upd('a_in', 1)">+ PIECE</button><div class="val" id="v-a_in">0</div><button class="btn-undo" onclick="upd('a_in', -1)">Undo</button></div></div>
+        <div class="card" style="border-left-color: var(--red)"><label style="color:var(--red)">Auto Missed</label><div class="counter-row"><button class="btn-act" style="background:var(--red); color:white" onclick="upd('a_ms', 1)">+ MISS</button><div class="val" id="v-a_ms">0</div><button class="btn-undo" onclick="upd('a_ms', -1)">Undo</button></div></div>
+        <div class="card" style="border-left-color: var(--green)"><label style="color:var(--green)">TeleOp Pieces</label><div class="counter-row"><button class="btn-act" style="background:var(--green); color:white" onclick="upd('tele', 1)">+ PIECE</button><div class="val" id="v-tele">0</div><button class="btn-undo" onclick="upd('tele', -1)">Undo</button></div></div>
+        <div class="card" style="display:flex; align-items:center; gap:10px;"><input type="checkbox" id="park" style="width:20px; height:20px;"><label for="park" style="margin:0">Ascent / Park Success</label></div>
+        <div class="card"><label>RP Value</label><input type="number" id="rp-val" value="0"></div>
+        <button class="btn-act" style="height:70px; margin-top:10px;" onclick="showReport()">GENERATE REPORT</button>
+    </div>
+
+    <div id="screen-report" class="screen">
+        <div class="card" style="background:#000; border: 2px solid var(--yellow); padding: 20px;">
+            <label style="text-align:center; font-size:1.2rem">MISSION SUMMARY</label>
+            <p style="margin-top:10px">TEAM: <span id="rep-team" style="color:var(--yellow); font-weight:bold"></span></p>
+            <p>MATCH: <span id="rep-match" style="color:var(--yellow)"></span></p>
+            <hr style="margin:10px 0; border:0; border-top:1px solid #333">
+            <p>AUTO: <span id="rep-auto" style="color:var(--green)"></span></p>
+            <p>TELE: <span id="rep-tele" style="color:var(--yellow)"></span> PIECES</p>
+        </div>
+        <button class="btn-act" style="background: var(--green); color:black" onclick="confirmAndSend()">CONFIRM & UPLINK</button>
+        <button class="btn-undo" style="width:100%; margin-top:10px; padding:15px; font-size:1rem" onclick="cancelReport()">BACK TO EDIT</button>
+    </div>
+
+    <div id="screen-search" class="screen">
+        <div style="display:flex; gap:10px; margin-bottom:15px">
+            <input type="number" id="q-team" placeholder="Search Team ID...">
+            <button class="btn-act" style="width:80px" onclick="searchTeam()">SCAN</button>
+        </div>
+        <div id="results" style="display:none">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px">
+                <div class="stat-box" style="background:#111; padding:10px; border-radius:5px; text-align:center;"><label>AVG TELE</label><div id="r-avg-gen" class="stat-val">--</div></div>
+                <div class="stat-box" style="background:#111; padding:10px; border-radius:5px; text-align:center;"><label>AVG LAST 3</label><div id="r-avg-3" class="stat-val" style="color:var(--green)">--</div></div>
+            </div>
+            <div class="card"><label>TELE PERFORMANCE</label><div style="height:140px"><canvas id="teleChart"></canvas></div></div>
+            <div class="card" style="border-left-color: var(--green)"><label>AUTO PERFORMANCE</label><div style="height:140px"><canvas id="autoChart"></canvas></div></div>
+            <div class="card" style="border-left-color: var(--blue)"><label>STRATEGY</label><div id="r-strat-text" style="font-size:0.85rem; color:#ccc">--</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbzdue_bEC3YKwi5telTjQXSEBESLYS5A-ihWHAZgLXkmfFXH4FB6GqGygW34zIarqxi/exec"; 
+    let state = { a_in: 0, a_ms: 0, tele: 0 };
+    let teleChart = null, autoChart = null;
+
+    function upd(k, v) { state[k] = Math.max(0, state[k] + v); document.getElementById('v-' + k).textContent = state[k]; }
+    
+    function toggleSearch() {
+        const isS = document.getElementById('screen-search').classList.toggle('active');
+        document.getElementById('screen-scout').classList.toggle('active', !isS);
+        document.getElementById('mode-btn').textContent = isS ? "BACK TO SCOUT" : "SEARCH";
+    }
+
+    function showReport() {
+        const team = document.getElementById('t-id').value;
+        if(!team) return Swal.fire('Eroare', 'Introdu Team ID!', 'error');
+        
+        document.getElementById('rep-team').textContent = team;
+        document.getElementById('rep-match').textContent = document.getElementById('m-num').value || "N/A";
+        document.getElementById('rep-auto').textContent = `${state.a_in}(${state.a_in+state.a_ms})${document.getElementById('park').checked ? "P" : ""}`;
+        document.getElementById('rep-tele').textContent = state.tele;
+        
+        document.getElementById('screen-scout').classList.remove('active');
+        document.getElementById('screen-report').classList.add('active');
+    }
+
+    function cancelReport() {
+        document.getElementById('screen-report').classList.remove('active');
+        document.getElementById('screen-scout').classList.add('active');
+    }
+
+    async function confirmAndSend() {
+        document.getElementById('loader').style.display = 'block';
+        const team = document.getElementById('t-id').value;
+        const pos = document.getElementById('p-id').value;
+        const autoData = `${state.a_in}(${state.a_in+state.a_ms})${document.getElementById('park').checked ? "P" : ""}`;
+        
+        const url = `${SCRIPT}?team=${team}&position=${encodeURIComponent(pos)}&autoData=${encodeURIComponent(autoData)}&scor=${state.tele}&rp=${document.getElementById('rp-val').value}`;
+        
+        try {
+            await fetch(url, { method: 'GET', mode: 'no-cors' });
+            document.getElementById('loader').style.display = 'none';
+            Swal.fire({
+                title: 'DATA UPLINKED!',
+                text: 'Raportul a fost salvat cu succes.',
+                icon: 'success',
+                confirmButtonColor: '#e8c93a',
+                confirmButtonText: 'OK'
+            }).then(() => location.reload());
+        } catch(e) {
+            document.getElementById('loader').style.display = 'none';
+            Swal.fire('Eroare', 'Conexiune eșuată!', 'error');
+        }
+    }
+
+    async function searchTeam() {
+        const tInput = document.getElementById('q-team').value;
+        if(!tInput) return;
+        document.getElementById('loader').style.display = 'block';
+        try {
+            const response = await fetch(`${SCRIPT}?team=${tInput}&intel=true&_=${new Date().getTime()}`);
+            const data = await response.json();
+            document.getElementById('loader').style.display = 'none';
+            if(data.error) return Swal.fire('Info', data.error, 'info');
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('r-avg-gen').textContent = data.avgGeneral;
+            document.getElementById('r-avg-3').textContent = data.avgLast3;
+            document.getElementById('r-strat-text').textContent = data.strategy;
+            updateChart(data.chartDataTele, data.chartDataAuto);
+        } catch(e) {
+            document.getElementById('loader').style.display = 'none';
+            Swal.fire('Eroare', 'Nu s-a putut scana echipa.', 'error');
+        }
+    }
+
+    function updateChart(tele, auto) {
+        if(teleChart) teleChart.destroy();
+        if(autoChart) autoChart.destroy();
+        const cfg = (data, color) => ({ type: 'line', data: { labels: data.map((_,i)=>i+1), datasets: [{ data: data, borderColor: color, tension: 0.3, pointRadius: 4, fill: true, backgroundColor: color+'22' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }, maintainAspectRatio: false } });
+        teleChart = new Chart(document.getElementById('teleChart'), cfg(tele, '#e8c93a'));
+        autoChart = new Chart(document.getElementById('autoChart'), cfg(auto, '#00e676'));
+    }
+</script>
+</body>
+</html>
