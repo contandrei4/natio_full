@@ -36,8 +36,8 @@
     <div class="nav-bar">
         <h1>DECODE</h1>
         <div style="display:flex; gap:5px;">
-            <button onclick="location.href='deep_intel.html'" style="background:var(--yellow); border:none; color:black; padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px; font-weight:bold;">DEEP INTEL</button>
-            <button id="mode-btn" onclick="toggleSearch()" style="background:transparent; border:1px solid var(--yellow); color:var(--yellow); padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px;">SEARCH</button>
+            <button onclick="window.location.href='deep_intel.html'" style="background:var(--yellow); border:none; color:black; padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px; font-weight:bold; cursor:pointer;">DEEP INTEL</button>
+            <button id="mode-btn" onclick="toggleSearch()" style="background:transparent; border:1px solid var(--yellow); color:var(--yellow); padding:5px 12px; font-family:'Bebas Neue'; border-radius: 5px; cursor:pointer;">SEARCH</button>
         </div>
     </div>
 
@@ -92,7 +92,7 @@
 </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbzdue_bEC3YKwi5telTjQXSEBESLYS5A-ihWHAZgLXkmfFXH4FB6GqGygW34zIarqxi/exec"; 
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbwVMpi2xBkL8kBUtL0-NSXlAdMalPAO99zgsgnWy-9v9pbeafhcuWUA8jUVbVEBTVwY/exec"; 
     let state = { a_in: 0, a_ms: 0, tele: 0 };
     let teleChart = null, autoChart = null;
 
@@ -107,12 +107,10 @@
     function showReport() {
         const team = document.getElementById('t-id').value;
         if(!team) return Swal.fire('Eroare', 'Introdu Team ID!', 'error');
-        
         document.getElementById('rep-team').textContent = team;
         document.getElementById('rep-match').textContent = document.getElementById('m-num').value || "N/A";
         document.getElementById('rep-auto').textContent = `${state.a_in}(${state.a_in+state.a_ms})${document.getElementById('park').checked ? "P" : ""}`;
         document.getElementById('rep-tele').textContent = state.tele;
-        
         document.getElementById('screen-scout').classList.remove('active');
         document.getElementById('screen-report').classList.add('active');
     }
@@ -127,19 +125,11 @@
         const team = document.getElementById('t-id').value;
         const pos = document.getElementById('p-id').value;
         const autoData = `${state.a_in}(${state.a_in+state.a_ms})${document.getElementById('park').checked ? "P" : ""}`;
-        
         const url = `${SCRIPT}?team=${team}&position=${encodeURIComponent(pos)}&autoData=${encodeURIComponent(autoData)}&scor=${state.tele}&rp=${document.getElementById('rp-val').value}`;
-        
         try {
             await fetch(url, { method: 'GET', mode: 'no-cors' });
             document.getElementById('loader').style.display = 'none';
-            Swal.fire({
-                title: 'DATA UPLINKED!',
-                text: 'Raportul a fost salvat cu succes.',
-                icon: 'success',
-                confirmButtonColor: '#e8c93a',
-                confirmButtonText: 'OK'
-            }).then(() => location.reload());
+            Swal.fire({ title: 'DATA UPLINKED!', text: 'Salvat cu succes.', icon: 'success', confirmButtonColor: '#e8c93a' }).then(() => location.reload());
         } catch(e) {
             document.getElementById('loader').style.display = 'none';
             Swal.fire('Eroare', 'Conexiune eșuată!', 'error');
@@ -156,20 +146,20 @@
             document.getElementById('loader').style.display = 'none';
             if(data.error) return Swal.fire('Info', data.error, 'info');
             document.getElementById('results').style.display = 'block';
-            document.getElementById('r-avg-gen').textContent = data.avgGeneral;
-            document.getElementById('r-avg-3').textContent = data.avgLast3;
-            document.getElementById('r-strat-text').textContent = data.strategy;
-            updateChart(data.chartDataTele, data.chartDataAuto);
+            document.getElementById('r-avg-gen').textContent = data.avgGeneral || "--";
+            document.getElementById('r-avg-3').textContent = data.avgLast3 || "--";
+            document.getElementById('r-strat-text').textContent = data.strategy || "--";
+            updateChart(data.chartDataTele || [], data.chartDataAuto || []);
         } catch(e) {
             document.getElementById('loader').style.display = 'none';
-            Swal.fire('Eroare', 'Nu s-a putut scana echipa.', 'error');
+            Swal.fire('Eroare', 'Eroare de scanare.', 'error');
         }
     }
 
     function updateChart(tele, auto) {
         if(teleChart) teleChart.destroy();
         if(autoChart) autoChart.destroy();
-        const cfg = (data, color) => ({ type: 'line', data: { labels: data.map((_,i)=>i+1), datasets: [{ data: data, borderColor: color, tension: 0.3, pointRadius: 4, fill: true, backgroundColor: color+'22' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }, maintainAspectRatio: false } });
+        const cfg = (data, color) => ({ type: 'line', data: { labels: data.map((_,i)=>i+1), datasets: [{ data: data, borderColor: color, tension: 0.3, pointRadius: 4, fill: true, backgroundColor: color+'22' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true } }, maintainAspectRatio: false } });
         teleChart = new Chart(document.getElementById('teleChart'), cfg(tele, '#e8c93a'));
         autoChart = new Chart(document.getElementById('autoChart'), cfg(auto, '#00e676'));
     }
