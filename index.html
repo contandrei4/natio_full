@@ -92,7 +92,8 @@
 </div>
 
 <script>
-    const SCRIPT = "https://script.google.com/macros/s/AKfycbwVMpi2xBkL8kBUtL0-NSXlAdMalPAO99zgsgnWy-9v9pbeafhcuWUA8jUVbVEBTVwY/exec"; 
+    // URL-ul pentru scriere și căutare simplă (SITE PRINCIPAL)
+    const SCRIPT = "https://script.google.com/macros/s/AKfycbzdue_bEC3YKwi5telTjQXSEBESLYS5A-ihWHAZgLXkmfFXH4FB6GqGygW34zIarqxi/exec"; 
     let state = { a_in: 0, a_ms: 0, tele: 0 };
     let teleChart = null, autoChart = null;
 
@@ -146,20 +147,20 @@
             document.getElementById('loader').style.display = 'none';
             if(data.error) return Swal.fire('Info', data.error, 'info');
             document.getElementById('results').style.display = 'block';
-            document.getElementById('r-avg-gen').textContent = data.avgGeneral || "--";
-            document.getElementById('r-avg-3').textContent = data.avgLast3 || "--";
-            document.getElementById('r-strat-text').textContent = data.strategy || "--";
-            updateChart(data.chartDataTele || [], data.chartDataAuto || []);
+            document.getElementById('r-avg-gen').textContent = data.avgGeneral;
+            document.getElementById('r-avg-3').textContent = data.avgLast3;
+            document.getElementById('r-strat-text').textContent = data.strategy;
+            updateChart(data.chartDataTele, data.chartDataAuto);
         } catch(e) {
             document.getElementById('loader').style.display = 'none';
-            Swal.fire('Eroare', 'Eroare de scanare.', 'error');
+            Swal.fire('Eroare', 'Nu s-a putut scana echipa.', 'error');
         }
     }
 
     function updateChart(tele, auto) {
         if(teleChart) teleChart.destroy();
         if(autoChart) autoChart.destroy();
-        const cfg = (data, color) => ({ type: 'line', data: { labels: data.map((_,i)=>i+1), datasets: [{ data: data, borderColor: color, tension: 0.3, pointRadius: 4, fill: true, backgroundColor: color+'22' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true } }, maintainAspectRatio: false } });
+        const cfg = (data, color) => ({ type: 'line', data: { labels: data.map((_,i)=>i+1), datasets: [{ data: data, borderColor: color, tension: 0.3, pointRadius: 4, fill: true, backgroundColor: color+'22' }] }, options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { beginAtZero: true, grid: { color: '#222' } } }, maintainAspectRatio: false } });
         teleChart = new Chart(document.getElementById('teleChart'), cfg(tele, '#e8c93a'));
         autoChart = new Chart(document.getElementById('autoChart'), cfg(auto, '#00e676'));
     }
